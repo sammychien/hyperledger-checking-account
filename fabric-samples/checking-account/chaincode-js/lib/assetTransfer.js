@@ -13,14 +13,14 @@ class AssetTransfer extends Contract {
     async InitLedger(ctx) {
         const assets = [
             {
-                id: 'account1',
-                name: 'Uno',
-                balance: 50,
+                ID: 'account1',
+                Name: 'Uno',
+                Balance: 50,
             },
             {
-                id: 'account2',
-                name: 'Dos',
-                balance: 100,
+                ID: 'account2',
+                Name: 'Dos',
+                Balance: 100,
             }
         ];
 
