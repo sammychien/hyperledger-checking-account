@@ -26,8 +26,8 @@ class AssetTransfer extends Contract {
 
         for (const asset of assets) {
             asset.docType = 'asset';
-            await ctx.stub.putState(asset.id, Buffer.from(JSON.stringify(asset)));
-            console.info(`Asset ${asset.id} initialized`);
+            await ctx.stub.putState(asset.ID, Buffer.from(JSON.stringify(asset)));
+            console.info(`Asset ${asset.ID} initialized`);
         }
     }
 
@@ -123,58 +123,70 @@ class AssetTransfer extends Contract {
     async createAccount(ctx, name) {
         const userId = ctx.clientIdentity.getID();
         const newAccount = {
-            id: userId,
-            name: name,
-            balance: 0,
+            ID: userId,
+            Name: name,
+            Balance: 0,
         };
         ctx.stub.putState(userId, Buffer.from(JSON.stringify(newAccount)));
         return JSON.stringify(newAccount);
     }
 
-    async getAccount(ctx) {
+    async accountExists(ctx, accountId) {
+        const accountJSON = await ctx.stub.getState(accountId);
+        return accountJSON && accountJSON.length > 0;
+    }
+
+    async getAccountEntity(ctx) {
         const userId = ctx.clientIdentity.getID();
-        const assetJSON = await ctx.stub.getState(userId); // get the asset from chaincode state
-        if (!assetJSON || assetJSON.length === 0) {
+        const accountJSON = await ctx.stub.getState(userId); // get the asset from chaincode state
+        if (!accountJSON || accountJSON.length === 0) {
             throw new Error(`The account ${userId} does not exist`);
         }
-        return assetJSON.toString();
+        return accountJSON;
+    }
+
+    async getAccount(ctx) {
+        const accountJSON = await this.getAccountEntity(ctx);
+        return accountJSON.toString();
     }
 
     async deposit(ctx, amount) {
         const userId = ctx.clientIdentity.getID();
-        const accountJSON = this.getAccount(ctx);
+        const accountJSON = await this.getAccount(ctx);
         const account = JSON.parse(accountJSON);
-        account.balance = account.balance + amount;
-        return ctx.stub.putState(userId, Buffer.from(JSON.stringify(account)));
+        account.Balance = Number(account.Balance) + Number(amount);
+        await ctx.stub.putState(userId, Buffer.from(JSON.stringify(account)));
+        return JSON.stringify(account);
     }
 
     async withdraw(ctx, amount) {
         const userId = ctx.clientIdentity.getID();
-        const accountJSON = this.getAccount(ctx);
+        const accountJSON = await this.getAccount(ctx);
         const account = JSON.parse(accountJSON);
-        if (account.balance < amount) {
+        if (Number(account.Balance) < Number(amount)) {
             throw new Error(`The client does not have enough money in account to withdraw ${amount}`);
         }
-        account.balance = account.balance - amount;
-        return ctx.stub.putState(userId, Buffer.from(JSON.stringify(account)));
+        account.Balance = Number(account.Balance) - Number(amount);
+        ctx.stub.putState(userId, Buffer.from(JSON.stringify(account)));
+        return JSON.stringify(account);
     }
 
     async transfer(ctx, recipient, amount) {
         const withdrawResponse = await this.withdraw(ctx, amount);
-        const recipientAccount = await ctx.stub.getState(recipient); // get the asset from chaincode state
+        const recipientAccountJSON = await ctx.stub.getState(recipient); // get the asset from chaincode state
+        const recipientAccount = JSON.parse(recipientAccountJSON.toString());
         if (!recipientAccount || recipientAccount.length === 0) {
             throw new Error(`The account ${recipient} does not exist`);
         }
 
-        recipientAccount.balance = recipientAccount.balance + amount;
-        await ctx.stub.putState(recipientAccount, Buffer.from(JSON.stringify(recipientAccount)));
+        recipientAccount.Balance = Number(recipientAccount.Balance) + Number(amount);
+        await ctx.stub.putState(recipient, Buffer.from(JSON.stringify(recipientAccount)));
         return withdrawResponse;
     }
 
     async getBalance(ctx) {
-        const accountJSON = await this.getAccount(ctx);
-        const account = JSON.parse(accountJSON);
-        return account.balance.toString();
+        const account = await this.getAccountEntity(ctx);
+        return account.Balance.toString();
     }
 
     async authorizeThirdParty(ctx, thirdParty, numUses) {
@@ -190,6 +202,7 @@ class AssetTransfer extends Contract {
          * key is third party uuid, value is numUses
          *
          */
+
 
     }
 
