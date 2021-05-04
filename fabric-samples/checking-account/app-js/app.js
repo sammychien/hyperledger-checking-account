@@ -11,6 +11,7 @@ const FabricCAServices = require('fabric-ca-client');
 const path = require('path');
 const { buildCAClient, registerAndEnrollUser, enrollAdmin } = require('../../test-application/javascript/CAUtil.js');
 const { buildCCPOrg1, buildWallet } = require('../../test-application/javascript/AppUtil.js');
+const { assert } = require('console');
 
 const channelName = 'mychannel';
 const chaincodeName = 'basic';
@@ -20,6 +21,113 @@ const org1UserId = 'appUser';
 
 function prettyJSONString(inputString) {
 	return JSON.stringify(JSON.parse(inputString), null, 2);
+}
+
+async function test_account_creation(contract){
+	console.log('\n--> Submit Transaction: createAccount, creates new account with id, name, balance arguments');
+	let result = await contract.submitTransaction('createAccount', 'Tom');
+	console.log('*** Result: committed');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+	console.log('\n--> Evaluate Transaction: getOwnAccount, function returns an account with a intrinsic accountId from MSP');
+	result = await contract.evaluateTransaction('getOwnAccount');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+
+	// This will be sent to just one peer and the results will be shown.
+	console.log('\n--> Evaluate Transaction: GetAllAssets, function returns all the current assets on the ledger');
+	result = await contract.evaluateTransaction('GetAllAssets');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+}
+
+async function test_account_deposit(contract){
+	console.log('\n--> Submit Transaction: deposit 350 to our account');
+	let result = await contract.submitTransaction('deposit', '350');
+	console.log('*** Result: committed');
+	if (`${result}` !== '') {
+		console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+	}
+
+	console.log('\n--> Evaluate Transaction: getOwnAccount, after deposit');
+	result = await contract.evaluateTransaction('getOwnAccount');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+}
+
+async function test_account_withdraw(contract){
+	try {
+		console.log('\n--> Submit Transaction: withdraw 450 from our account. Should return error.');
+		let result = await contract.submitTransaction('withdraw', '450');
+		console.log('*** Result: committed');
+		if (`${result}` !== '') {
+			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+		}
+	} catch (error) {
+		console.log(`*** Successfully caught the error: \n    ${error}`);
+	}
+
+	console.log('\n--> Submit Transaction: withdraw 250 from our account. Should succeed.');
+	let result = await contract.submitTransaction('withdraw', '250');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+
+	console.log('\n--> Evaluate Transaction: getOwnAccount, after withdrawal');
+	result = await contract.evaluateTransaction('getOwnAccount');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+
+	console.log('\n--> Evaluate Transaction: GetAllAssets, before transfer');
+	result = await contract.evaluateTransaction('GetAllAssets');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+}
+
+async function test_account_balance_check(contract){
+	console.log('\n--> Submit Transaction: transfer, function transfers 50 from our account to account1.');
+	let result = await contract.submitTransaction('transfer', 'account1', '50');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+	console.log('\n--> Evaluate Transaction: GetAllAssets, after transfer');
+	result = await contract.evaluateTransaction('GetAllAssets');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+	console.log('\n--> Evaluate Transaction: getBalance, after transfer');
+	result = await contract.evaluateTransaction('getBalance');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+	console.log('\n--> Submit Transaction: AuthorizeThirdParty, authorizing account1 to check our account 5 times');
+	result = await contract.submitTransaction('authorizeThirdParty', 'account1', '5');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+	console.log('\n--> Evaluate Transaction: GetAllAssets, after authorizing account 1');
+	result = await contract.evaluateTransaction('GetAllAssets');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+	console.log('\n--> Evaluate Transaction: getAccountWithId, after authorizing account 1');
+	result = await contract.evaluateTransaction('getAccountWithId', 'account1');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+	console.log('\n--> Evaluate Transaction: GetAllAssets, after authorizing account 1 ,pt 2');
+	result = await contract.evaluateTransaction('GetAllAssets');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+
+	console.log('\n--> Submit Transaction: balanceCheck, checking balance of account1 compared to 40');
+	result = await contract.submitTransaction('balanceCheck', 'account1', '40');
+	console.log(`*** Result: ${result}`);
+
+	console.log('\n--> Submit Transaction: balanceCheck, checking balance of account1 compared to 200');
+	result = await contract.submitTransaction('balanceCheck', 'account1', '200');
+	console.log(`*** Result: ${result}`);
+
+	try {
+		console.log('\n--> Submit Transaction: balanceCheck, checking balance of account1 compared to 100, but should expect an error');
+		result = await contract.submitTransaction('balanceCheck', 'account1', '100');
+		console.log(`*** Result: ${result}`);
+	} catch (error) {
+		console.log(`*** Successfully caught the error: \n    ${error}`);
+	}
+
+	console.log('\n--> Evaluate Transaction: GetAllAssets, after checking balance of account 1 thrice');
+	result = await contract.evaluateTransaction('GetAllAssets');
+	console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 }
 
 // pre-requisites:
@@ -124,114 +232,12 @@ async function main() {
 			let result = await contract.evaluateTransaction('GetAllAssets');
 			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
 
-			// Now let's try to submit a transaction.
-			// This will be sent to both peers and if both peers endorse the transaction, the endorsed proposal will be sent
-			// to the orderer to be committed by each of the peer's to the channel ledger.
-			console.log('\n--> Submit Transaction: createAccount, creates new account with id, name, balance arguments');
-			result = await contract.submitTransaction('createAccount', 'Tom');
-			console.log('*** Result: committed');
-			if (`${result}` !== '') {
-				console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-			}
-
-			console.log('\n--> Evaluate Transaction: getOwnAccount, function returns an account with a intrinsic accountId from MSP');
-			result = await contract.evaluateTransaction('getOwnAccount');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-
-			// This will be sent to just one peer and the results will be shown.
-			console.log('\n--> Evaluate Transaction: GetAllAssets, function returns all the current assets on the ledger');
-			result = await contract.evaluateTransaction('GetAllAssets');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			// console.log('\n--> Evaluate Transaction: AssetExists, function returns "true" if an asset with given assetID exist');
-			// result = await contract.evaluateTransaction('AssetExists', 'asset1');
-			// console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			console.log('\n--> Submit Transaction: deposit 350 to our account');
-			result = await contract.submitTransaction('deposit', '350');
-			console.log('*** Result: committed');
-			if (`${result}` !== '') {
-				console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-			}
-
-			console.log('\n--> Evaluate Transaction: getOwnAccount, after deposit');
-			result = await contract.evaluateTransaction('getOwnAccount');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			try {
-				console.log('\n--> Submit Transaction: withdraw 450 from our account. Should return error.');
-				result = await contract.submitTransaction('withdraw', '450');
-				console.log('*** Result: committed');
-				if (`${result}` !== '') {
-					console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-				}
-			} catch (error) {
-				console.log(`*** Successfully caught the error: \n    ${error}`);
-			}
-
-			console.log('\n--> Submit Transaction: withdraw 250 from our account. Should succeed.');
-			result = await contract.submitTransaction('withdraw', '250');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-
-			console.log('\n--> Evaluate Transaction: getOwnAccount, after withdrawal');
-			result = await contract.evaluateTransaction('getOwnAccount');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-
-			console.log('\n--> Evaluate Transaction: GetAllAssets, before transfer');
-			result = await contract.evaluateTransaction('GetAllAssets');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			console.log('\n--> Submit Transaction: transfer, function transfers 50 from our account to account1.');
-			result = await contract.submitTransaction('transfer', 'account1', '50');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			console.log('\n--> Evaluate Transaction: GetAllAssets, after transfer');
-			result = await contract.evaluateTransaction('GetAllAssets');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			console.log('\n--> Evaluate Transaction: getBalance, after transfer');
-			result = await contract.evaluateTransaction('getBalance');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			console.log('\n--> Submit Transaction: AuthorizeThirdParty, authorizing account1 to check our account 5 times');
-			result = await contract.submitTransaction('authorizeThirdParty', 'account1', '5');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			console.log('\n--> Evaluate Transaction: GetAllAssets, after authorizing account 1');
-			result = await contract.evaluateTransaction('GetAllAssets');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			console.log('\n--> Evaluate Transaction: getAccountWithId, after authorizing account 1');
-			result = await contract.evaluateTransaction('getAccountWithId', 'account1');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-			console.log('\n--> Evaluate Transaction: GetAllAssets, after authorizing account 1 ,pt 2');
-			result = await contract.evaluateTransaction('GetAllAssets');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
-
-
-			console.log('\n--> Submit Transaction: balanceCheck, checking balance of account1 compared to 40');
-			result = await contract.submitTransaction('balanceCheck', 'account1', '40');
-			console.log(`*** Result: ${result}`);
-
-			console.log('\n--> Submit Transaction: balanceCheck, checking balance of account1 compared to 200');
-			result = await contract.submitTransaction('balanceCheck', 'account1', '200');
-			console.log(`*** Result: ${result}`);
-
-			try {
-				console.log('\n--> Submit Transaction: balanceCheck, checking balance of account1 compared to 100, but should expect an error');
-				result = await contract.submitTransaction('balanceCheck', 'account1', '100');
-				console.log(`*** Result: ${result}`);
-			} catch (error) {
-				console.log(`*** Successfully caught the error: \n    ${error}`);
-			}
-
-			console.log('\n--> Evaluate Transaction: GetAllAssets, after checking balance of account 1 thrice');
-			result = await contract.evaluateTransaction('GetAllAssets');
-			console.log(`*** Result: ${prettyJSONString(result.toString())}`);
+			await test_account_creation(contract);
+			await test_account_deposit(contract);
+			await test_account_withdraw(contract);
+			await test_account_balance_check(contract);
+			
+			console.log("*** All 4 tests passed!");
 		} finally {
 			// Disconnect from the gateway when the application is closing
 			// This will close all connections to the network
