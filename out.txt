@@ -1,0 +1,349 @@
+Loaded the network configuration located at /home/hyperledgervm/hyperledgerfabric/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json
+Built a CA Client named ca-org1
+Built a file system wallet at /home/hyperledgervm/hyperledgerfabric/fabric-samples/asset-transfer-basic/application-javascript/wallet
+An identity for the admin user already exists in the wallet
+An identity for the user appUser already exists in the wallet
+
+--> Submit Transaction: InitLedger, function creates the initial set of assets on the ledger
+*** Result: committed
+
+--> Evaluate Transaction: GetAllAssets, function returns all the current assets on the ledger
+*** Result: [
+  {
+    "Key": "account1",
+    "Record": {
+      "ID": "account1",
+      "Name": "Uno",
+      "Balance": 50,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "account2",
+    "Record": {
+      "ID": "account2",
+      "Name": "Dos",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  }
+]
+
+--> Submit Transaction: createAccount, creates new account with id, name, balance arguments
+*** Result: committed
+*** Result: {
+  "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+  "Name": "Tom",
+  "Balance": 0,
+  "AuthedParties": {}
+}
+
+--> Evaluate Transaction: getOwnAccount, function returns an account with a intrinsic accountId from MSP
+*** Result: {
+  "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+  "Name": "Tom",
+  "Balance": 0,
+  "AuthedParties": {}
+}
+
+--> Evaluate Transaction: GetAllAssets, function returns all the current assets on the ledger
+*** Result: [
+  {
+    "Key": "account1",
+    "Record": {
+      "ID": "account1",
+      "Name": "Uno",
+      "Balance": 50,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "account2",
+    "Record": {
+      "ID": "account2",
+      "Name": "Dos",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+    "Record": {
+      "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+      "Name": "Tom",
+      "Balance": 0,
+      "AuthedParties": {}
+    }
+  }
+]
+
+--> Submit Transaction: deposit 350 to our account
+*** Result: committed
+*** Result: {
+  "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+  "Name": "Tom",
+  "Balance": 350,
+  "AuthedParties": {}
+}
+
+--> Evaluate Transaction: getOwnAccount, after deposit
+*** Result: {
+  "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+  "Name": "Tom",
+  "Balance": 350,
+  "AuthedParties": {}
+}
+
+--> Submit Transaction: withdraw 450 from our account. Should return error.
+*** Successfully caught the error: 
+    Error: No valid responses from any peers. Errors:
+    peer=peer0.org2.example.com:9051, status=500, message=error in simulation: transaction returned with failure: Error: The client does not have enough money in account to withdraw 450
+    peer=peer0.org1.example.com:7051, status=500, message=error in simulation: transaction returned with failure: Error: The client does not have enough money in account to withdraw 450
+
+--> Submit Transaction: withdraw 250 from our account. Should succeed.
+*** Result: {
+  "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+  "Name": "Tom",
+  "Balance": 100,
+  "AuthedParties": {}
+}
+
+--> Evaluate Transaction: getOwnAccount, after withdrawal
+*** Result: {
+  "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+  "Name": "Tom",
+  "Balance": 100,
+  "AuthedParties": {}
+}
+
+--> Evaluate Transaction: GetAllAssets, before transfer
+*** Result: [
+  {
+    "Key": "account1",
+    "Record": {
+      "ID": "account1",
+      "Name": "Uno",
+      "Balance": 50,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "account2",
+    "Record": {
+      "ID": "account2",
+      "Name": "Dos",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+    "Record": {
+      "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+      "Name": "Tom",
+      "Balance": 100,
+      "AuthedParties": {}
+    }
+  }
+]
+
+--> Submit Transaction: transfer, function transfers 50 from our account to account1.
+*** Result: {
+  "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+  "Name": "Tom",
+  "Balance": 50,
+  "AuthedParties": {}
+}
+
+--> Evaluate Transaction: GetAllAssets, after transfer
+*** Result: [
+  {
+    "Key": "account1",
+    "Record": {
+      "ID": "account1",
+      "Name": "Uno",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "account2",
+    "Record": {
+      "ID": "account2",
+      "Name": "Dos",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+    "Record": {
+      "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+      "Name": "Tom",
+      "Balance": 50,
+      "AuthedParties": {}
+    }
+  }
+]
+
+--> Evaluate Transaction: getBalance, after transfer
+*** Result: 50
+
+--> Submit Transaction: AuthorizeThirdParty, authorizing account1 to check our account 5 times
+*** Result: {
+  "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+  "Name": "Tom",
+  "Balance": 50,
+  "AuthedParties": {
+    "account1": 5
+  }
+}
+
+--> Evaluate Transaction: GetAllAssets, after authorizing account 1
+*** Result: [
+  {
+    "Key": "account1",
+    "Record": {
+      "ID": "account1",
+      "Name": "Uno",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "account2",
+    "Record": {
+      "ID": "account2",
+      "Name": "Dos",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+    "Record": {
+      "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+      "Name": "Tom",
+      "Balance": 50,
+      "AuthedParties": {
+        "account1": 5
+      }
+    }
+  }
+]
+
+--> Evaluate Transaction: getAccountWithId, after authorizing account 1
+*** Result: {
+  "ID": "account1",
+  "Name": "Uno",
+  "Balance": 100,
+  "AuthedParties": {
+    "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+  }
+}
+
+--> Evaluate Transaction: GetAllAssets, after authorizing account 1 ,pt 2
+*** Result: [
+  {
+    "Key": "account1",
+    "Record": {
+      "ID": "account1",
+      "Name": "Uno",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "account2",
+    "Record": {
+      "ID": "account2",
+      "Name": "Dos",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+    "Record": {
+      "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+      "Name": "Tom",
+      "Balance": 50,
+      "AuthedParties": {
+        "account1": 5
+      }
+    }
+  }
+]
+
+--> Submit Transaction: balanceCheck, checking balance of account1 compared to 40
+*** Result: account1 has at least 40.
+
+--> Submit Transaction: balanceCheck, checking balance of account1 compared to 200
+*** Result: account1 does not have at least 200.
+
+--> Submit Transaction: balanceCheck, checking balance of account1 compared to 100, but should expect an error
+*** Successfully caught the error: 
+    Error: No valid responses from any peers. Errors:
+    peer=peer0.org2.example.com:9051, status=500, message=error in simulation: transaction returned with failure: Error: x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com has no more checks available for account account1
+    peer=peer0.org1.example.com:7051, status=500, message=error in simulation: transaction returned with failure: Error: x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com has no more checks available for account account1
+
+--> Evaluate Transaction: GetAllAssets, after checking balance of account 1 thrice
+*** Result: [
+  {
+    "Key": "account1",
+    "Record": {
+      "ID": "account1",
+      "Name": "Uno",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 0
+      }
+    }
+  },
+  {
+    "Key": "account2",
+    "Record": {
+      "ID": "account2",
+      "Name": "Dos",
+      "Balance": 100,
+      "AuthedParties": {
+        "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com": 2
+      }
+    }
+  },
+  {
+    "Key": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+    "Record": {
+      "ID": "x509::/OU=client/OU=org1/OU=department1/CN=appUser::/C=US/ST=North Carolina/L=Durham/O=org1.example.com/CN=ca.org1.example.com",
+      "Name": "Tom",
+      "Balance": 50,
+      "AuthedParties": {
+        "account1": 5
+      }
+    }
+  }
+]
